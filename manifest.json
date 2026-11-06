@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "Leitura Séria",
+  "version": "0.2.0",
+  "description": "On-demand questions and AI explanations in the Zotero PDF reader, to help turn scientific reading into better notes.",
+  "author": "Guilherme Nunes de Vasconcelos",
+  "applications": {
+    "zotero": {
+      "id": "leitura-seria@zotero.local",
+      "update_url": "https://example.com/leitura-seria/updates.json",
+      "strict_min_version": "6.999",
+      "strict_max_version": "99.*"
+    }
+  }
+}

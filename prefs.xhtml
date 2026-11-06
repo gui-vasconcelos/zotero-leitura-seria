@@ -1,0 +1,50 @@
+<vbox id="leitura-seria-prefs" xmlns:html="http://www.w3.org/1999/xhtml">
+  <groupbox id="leitura-seria-prefs-modelo">
+    <label><html:h2>Leitura Séria · modelo para o botão Explicar</html:h2></label>
+    <description>
+      Só o botão Explicar usa o modelo. O trecho selecionado, e o título, a autoria e o resumo do texto se a opção abaixo estiver ligada, são enviados ao endereço configurado. Para textos inéditos ou sob embargo, aponte para um modelo local.
+    </description>
+
+    <hbox align="center">
+      <label value="Endereço da API" style="width: 130px" />
+      <html:input id="leitura-seria-endpoint" type="text" style="flex: 1" preference="extensions.zotero.leitura-seria.endpoint" />
+    </hbox>
+    <hbox align="center">
+      <label value="Modelo" style="width: 130px" />
+      <html:input id="leitura-seria-model" type="text" style="flex: 1" preference="extensions.zotero.leitura-seria.model" />
+    </hbox>
+    <hbox align="center">
+      <label value="Chave da API" style="width: 130px" />
+      <html:input id="leitura-seria-apikey" type="password" style="flex: 1" preference="extensions.zotero.leitura-seria.apiKey" />
+    </hbox>
+    <hbox align="center">
+      <label value="Idioma da explicação" style="width: 130px" />
+      <html:input id="leitura-seria-language" type="text" style="flex: 1" preference="extensions.zotero.leitura-seria.language" />
+    </hbox>
+    <hbox align="center">
+      <label value="Largura do painel (px)" style="width: 130px" />
+      <html:input id="leitura-seria-panelwidth" type="number" min="280" max="720" style="width: 80px" preference="extensions.zotero.leitura-seria.panelWidth" />
+    </hbox>
+    <checkbox id="leitura-seria-disablethinking" label="Desligar o modo de raciocínio do modelo (mais rápido, e necessário para respostas curtas no DeepSeek V4). Desligue esta opção se o seu endereço rejeitar o parâmetro thinking." preference="extensions.zotero.leitura-seria.disableThinking" />
+    <checkbox id="leitura-seria-sendmetadata" label="Enviar título, autoria, data e resumo do texto junto com o trecho" preference="extensions.zotero.leitura-seria.sendMetadata" />
+  </groupbox>
+
+  <groupbox id="leitura-seria-prefs-marcadores">
+    <label><html:h2>Leitura Séria · prefixos nos comentários</html:h2></label>
+    <description>
+      Prefixos que entram no começo do que você escreve ou salva a partir do plugin. Deixe em branco para não usar prefixo.
+    </description>
+    <hbox align="center">
+      <label value="Síntese" style="width: 130px" />
+      <html:input id="leitura-seria-prefix-sintese" type="text" style="width: 80px" preference="extensions.zotero.leitura-seria.prefix.sintese" />
+    </hbox>
+    <hbox align="center">
+      <label value="Tensão" style="width: 130px" />
+      <html:input id="leitura-seria-prefix-tensao" type="text" style="width: 80px" preference="extensions.zotero.leitura-seria.prefix.tensao" />
+    </hbox>
+    <hbox align="center">
+      <label value="Explicação do modelo" style="width: 130px" />
+      <html:input id="leitura-seria-prefix-modelo" type="text" style="width: 80px" preference="extensions.zotero.leitura-seria.prefix.modelo" />
+    </hbox>
+  </groupbox>
+</vbox>
