@@ -143,7 +143,12 @@ function loadLib(env) {
   }
   assert.ok(ctx.LeituraCore, "LeituraCore deveria ser exposto via _globalThis");
   assert.ok(ctx.LeituraUI, "LeituraUI deveria ser exposto via _globalThis");
-  return ctx.LeituraUI.create({ Zotero: env.Zotero, Services: env.Services, Core: ctx.LeituraCore });
+  return ctx.LeituraUI.create({
+    Zotero: env.Zotero,
+    Services: env.Services,
+    Core: ctx.LeituraCore,
+    mountMode: env.mountMode || "sync", // "load" é o modo de produção, que espera o iframe carregar
+  });
 }
 
 function makePopup(env, annotationOverrides) {
@@ -691,6 +696,57 @@ test("prefixos configurados nas preferências são respeitados, inclusive em bra
   p2.pclick("Salvar");
   await tick();
   assert.equal(env2.saved[0].json.comment, "y");
+});
+
+test("no modo de produção o painel espera o iframe carregar e a pergunta não muda sozinha", async () => {
+  const env = makeEnv();
+  env.mountMode = "load";
+  const p = makePopup(env);
+  p.click("Síntese");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  await wait(60);
+  assert.equal(p.doc.querySelectorAll("#leitura-seria-panel iframe").length, 1);
+  const questionOf = () => p.panel().querySelector("div[style*='font-weight']").textContent;
+  const first = questionOf();
+  assert.ok(Core.QUESTIONS.sintese.includes(first));
+  // Antes, o painel se refazia sem parar e a pergunta trocava várias vezes por segundo.
+  await wait(300);
+  assert.equal(questionOf(), first);
+  assert.equal(p.panel().querySelectorAll("textarea").length, 1);
+  p.panel().querySelector("textarea").value = "texto que não pode sumir";
+  await wait(100);
+  assert.equal(p.panel().querySelector("textarea").value, "texto que não pode sumir");
+  assert.equal(p.doc.querySelectorAll("#leitura-seria-panel iframe").length, 1);
+});
+
+test("se o navegador trocar o documento do iframe antes do load, o conteúdo vai para o documento final", async () => {
+  const env = makeEnv();
+  env.mountMode = "load";
+  const p = makePopup(env);
+  const IFrame = p.dom.window.HTMLIFrameElement.prototype;
+  const real = Object.getOwnPropertyDescriptor(IFrame, "contentDocument");
+  const swapped = new JSDOM("<!doctype html><body></body>").window.document;
+  let useSwapped = false;
+  Object.defineProperty(IFrame, "contentDocument", {
+    configurable: true,
+    get() {
+      return useSwapped ? swapped : real.get.call(this);
+    },
+  });
+  try {
+    p.click("Síntese");
+    // O Firefox troca o documento inicial por outro enquanto o iframe carrega.
+    useSwapped = true;
+    const iframe = p.doc.querySelector("#leitura-seria-panel iframe");
+    iframe.dispatchEvent(new p.dom.window.Event("load"));
+    await new Promise((r) => setTimeout(r, 80));
+    assert.equal(swapped.querySelectorAll("textarea").length, 1, "o conteúdo precisa estar no documento final");
+    const q = swapped.querySelector("div[style*='font-weight']").textContent;
+    await new Promise((r) => setTimeout(r, 300));
+    assert.equal(swapped.querySelector("div[style*='font-weight']").textContent, q, "sem refazer em laço");
+  } finally {
+    Object.defineProperty(IFrame, "contentDocument", real);
+  }
 });
 
 // ------------------------------------------------------------------ menu de clique direito

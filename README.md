@@ -35,7 +35,7 @@ Only Explain with AI uses an AI model. Synthesis and Tension work offline and wi
 
 ## Installation
 
-1. Download `leitura-seria-0.2.3.xpi` (from the Releases page, or build it yourself, see below).
+1. Download `leitura-seria-0.2.4.xpi` (from the Releases page, or build it yourself, see below).
 2. In Zotero, open Tools, then Plugins.
 3. Click the gear, choose Install Plugin From File and select the `.xpi`.
 

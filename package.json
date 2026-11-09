@@ -1,6 +1,6 @@
 {
   "name": "leitura-seria",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Zotero plugin with on-demand questions and AI explanations in the PDF reader",
   "license": "MIT",
   "private": true,
