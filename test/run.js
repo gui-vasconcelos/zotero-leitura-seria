@@ -173,7 +173,9 @@ function makePopup(env, annotationOverrides) {
     fire(b);
   };
   // Painel lateral.
-  const panel = () => doc.getElementById("leitura-seria-panel");
+  // O painel mora num iframe próprio. panel() devolve o corpo desse iframe e outer() a moldura no leitor.
+  const outer = () => doc.getElementById("leitura-seria-panel");
+  const panel = () => (outer() ? outer().querySelector("iframe").contentDocument.body : null);
   const ptext = () => (panel() ? panel().textContent : "");
   const pbuttons = () => (panel() ? [...panel().querySelectorAll("button")] : []);
   const pfind = (label) => pbuttons().find((b) => b.textContent.startsWith(label));
@@ -182,7 +184,7 @@ function makePopup(env, annotationOverrides) {
     assert.ok(b, "botão do painel não encontrado " + label + " entre " + pbuttons().map((x) => x.textContent).join(" | "));
     fire(b);
   };
-  return { dom, doc, host, ui, annotation, buttons, find, click, panel, ptext, pbuttons, pfind, pclick };
+  return { dom, doc, host, ui, annotation, buttons, find, click, outer, panel, ptext, pbuttons, pfind, pclick };
 }
 
 // ------------------------------------------------------------------ núcleo
@@ -309,13 +311,14 @@ test("o painel abre ao lado do texto, reserva espaço e a caixa tem mais que o d
   const env = makeEnv();
   const p = makePopup(env);
   p.click("Síntese");
+  const outer = p.outer();
   const panel = p.panel();
-  assert.ok(panel, "painel deveria existir");
-  assert.ok(!p.host.contains(panel), "o painel não pode ficar dentro do popup sobre o texto");
-  assert.equal(panel.parentNode, p.doc.body);
-  assert.equal(panel.style.position, "fixed");
-  assert.equal(panel.style.right, "0px");
-  assert.equal(panel.style.width, "380px");
+  assert.ok(outer && panel, "painel deveria existir");
+  assert.ok(!p.host.contains(outer), "o painel não pode ficar dentro do popup sobre o texto");
+  assert.equal(outer.parentNode, p.doc.body);
+  assert.equal(outer.style.position, "fixed");
+  assert.equal(outer.style.right, "0px");
+  assert.equal(outer.style.width, "380px");
   assert.equal(p.doc.body.style.paddingRight, "380px");
   assert.ok(panel.textContent.includes(p.annotation.text), "o painel cita o trecho");
   const ta = panel.querySelector("textarea");
@@ -330,7 +333,7 @@ test("largura do painel vem da preferência e fica entre 280 e 720", () => {
     const env = makeEnv({ prefs: { "leitura-seria.panelWidth": value } });
     const p = makePopup(env);
     p.click("Síntese");
-    return p.panel().style.width;
+    return p.outer().style.width;
   };
   assert.equal(widthFor(500), "500px");
   assert.equal(widthFor(5000), "720px");
@@ -429,6 +432,28 @@ test("Reflexão usa a seta e Ctrl+Enter salva", async () => {
   await tick();
   assert.equal(env.saved.length, 1);
   assert.equal(env.saved[0].json.comment, "→ O autor trata como propriedade do espaço, eu como algo que emerge.");
+});
+
+test("a caixa de texto mora num documento isolado, então setas e atalhos do leitor não a alcançam", () => {
+  const env = makeEnv();
+  const p = makePopup(env);
+  p.click("Síntese");
+  const ta = p.panel().querySelector("textarea");
+  assert.notEqual(ta.ownerDocument, p.doc, "a caixa precisa estar fora do documento do leitor");
+  // Simula o leitor cancelando setas na janela, em captura, como faria para navegar nas páginas.
+  let seen = 0;
+  p.dom.window.addEventListener(
+    "keydown",
+    (e) => {
+      seen++;
+      e.preventDefault();
+    },
+    true
+  );
+  const ev = new p.dom.window.KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true });
+  ta.dispatchEvent(ev);
+  assert.equal(seen, 0, "o leitor não pode nem ver a tecla");
+  assert.equal(ev.defaultPrevented, false, "a seta precisa mover o cursor do texto");
 });
 
 test("teclas digitadas na caixa não chegam aos atalhos do leitor", () => {
@@ -677,7 +702,10 @@ function makeMenu(env, ids) {
   const items = [];
   ui.registerMenu({ reader: env.reader, params: { ids }, append: (i) => items.push(i) });
   const doc = dom.window.document;
-  const panel = () => doc.getElementById("leitura-seria-panel");
+  const panel = () => {
+    const o = doc.getElementById("leitura-seria-panel");
+    return o ? o.querySelector("iframe").contentDocument.body : null;
+  };
   const pclick = (label) => {
     const b = [...panel().querySelectorAll("button")].find((x) => x.textContent.startsWith(label));
     assert.ok(b, "botão não encontrado " + label);
