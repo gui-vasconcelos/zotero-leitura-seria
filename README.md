@@ -21,21 +21,21 @@ The idea comes from two sources. From Mortimer Adler, the rule of understanding 
 
 Select text in a PDF and the popup gets a small row with three buttons. They only launch a side panel that opens next to the PDF, so you can keep seeing what you are reading. The panel pushes the page to the left instead of covering it, and its width is configurable.
 
-**Explicar (Explain)** asks the model for a short explanation of the passage. The answer is read-only and is not saved. The prompt tells the model to point to the term that carries the argument, not to summarize the text, not to evaluate the author, and to say which context is missing when there is some. If you want to keep it, Save puts the explanation in the annotation comment, starting with the marker `M:` (configurable) so its origin stays clear. After an explanation, the button "Com as minhas palavras" (In my own words) opens a comprehension question so you can try to say the passage your own way.
+**Explicar com IA (Explain with AI)** asks the model for a short explanation of the passage. The answer is read-only and is not saved. The prompt tells the model to point to the term that carries the argument, not to summarize the text, not to evaluate the author, and to say which context is missing when there is some. If you want to keep it, Save puts the explanation in the annotation comment, starting with the marker `M:` (configurable) so its origin stays clear. After an explanation, the button "Com as minhas palavras" (In my own words) opens a comprehension question so you can try to say the passage your own way.
 
 **Síntese (Synthesis)** shows a question asking for a one-sentence claim of your own, like the title of an atomic note. The answer goes into the highlight's comment with the prefix `N:`.
 
-**Tensão (Tension)** asks what the passage confirms, changes or complicates in what you already think. The answer goes in with the prefix `→`.
+**Reflexão (Reflection)** asks what the passage confirms, changes or complicates in what you already think. The answer goes in with the prefix `→`.
 
 Questions come from a rotating bank and never repeat the one that just appeared. "Outra pergunta" swaps the current one. Ctrl+Enter saves. The first save turns the selection into a highlight, and later answers for the same passage are appended to that highlight's comment, one entry per line.
 
-For highlights that already exist, the same three actions are in the right-click menu of the annotation in the sidebar: *Leitura séria - Explicar este trecho*, *Leitura séria - Síntese* and *Leitura séria - Tensão*. They open the same side panel, and answers are appended to the existing comment.
+For highlights that already exist, the same three actions are in the right-click menu of the annotation in the sidebar: *Leitura séria - Explicar este trecho*, *Leitura séria - Síntese* and *Leitura séria - Reflexão*. They open the same side panel, and answers are appended to the existing comment.
 
-Only Explain uses an AI model. Synthesis and Tension work offline and without a key.
+Only Explain with AI uses an AI model. Synthesis and Tension work offline and without a key.
 
 ## Installation
 
-1. Download `leitura-seria-0.2.0.xpi` (from the Releases page, or build it yourself, see below).
+1. Download `leitura-seria-0.2.1.xpi` (from the Releases page, or build it yourself, see below).
 2. In Zotero, open Tools, then Plugins.
 3. Click the gear, choose Install Plugin From File and select the `.xpi`.
 

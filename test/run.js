@@ -292,7 +292,7 @@ test("explain devolve erro legível quando a rede falha", async () => {
 test("popup é só um lançador com três botões, sem caixa de texto e sem painel", () => {
   const env = makeEnv();
   const p = makePopup(env);
-  assert.deepEqual(p.buttons().map((b) => b.textContent), ["Explicar", "Síntese", "Tensão"]);
+  assert.deepEqual(p.buttons().map((b) => b.textContent), ["Explicar com IA", "Síntese", "Reflexão"]);
   assert.equal(p.doc.querySelectorAll("textarea").length, 0);
   assert.equal(p.panel(), null);
   assert.equal(env.httpCalls.length, 0);
@@ -349,7 +349,7 @@ test("fechar o painel devolve o espaço ao leitor, e abrir de novo reaproveita u
   assert.equal(p.doc.body.style.paddingRight, "380px");
   assert.ok(resizes >= 1);
   // Clicar noutro botão do popup reaproveita o mesmo painel.
-  p.click("Tensão");
+  p.click("Reflexão");
   assert.equal(p.doc.querySelectorAll("#leitura-seria-panel").length, 1);
   p.pclick("×");
   assert.equal(p.panel(), null);
@@ -365,7 +365,7 @@ test("o painel troca de modo pela barra de modos sem sair do lugar", () => {
   const p = makePopup(env);
   p.click("Síntese");
   assert.ok(Core.QUESTIONS.sintese.some((q) => p.ptext().includes(q)));
-  p.pclick("Tensão");
+  p.pclick("Reflexão");
   assert.ok(Core.QUESTIONS.tensao.some((q) => p.ptext().includes(q)));
   assert.ok(p.pfind("Salvar (→)"));
   assert.equal(p.doc.querySelectorAll("#leitura-seria-panel").length, 1);
@@ -410,7 +410,7 @@ test("depois do primeiro salvamento as próximas respostas se somam ao mesmo des
       saves++;
     },
   };
-  p.pclick("Tensão");
+  p.pclick("Reflexão");
   p.panel().querySelector("textarea").value = "Mas isso complica o que eu pensava.";
   p.pclick("Salvar (→)");
   await tick();
@@ -419,10 +419,10 @@ test("depois do primeiro salvamento as próximas respostas se somam ao mesmo des
   assert.equal(env.annItems[key].annotationComment, "N: Primeira ideia.\n→ Mas isso complica o que eu pensava.");
 });
 
-test("Tensão usa a seta e Ctrl+Enter salva", async () => {
+test("Reflexão usa a seta e Ctrl+Enter salva", async () => {
   const env = makeEnv();
   const p = makePopup(env);
-  p.click("Tensão");
+  p.click("Reflexão");
   const ta = p.panel().querySelector("textarea");
   ta.value = "O autor trata como propriedade do espaço, eu como algo que emerge.";
   ta.dispatchEvent(new p.dom.window.KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true, cancelable: true }));
@@ -661,7 +661,7 @@ test("prefixos configurados nas preferências são respeitados, inclusive em bra
 
   const env2 = makeEnv({ prefs: { "leitura-seria.prefix.tensao": "" } });
   const p2 = makePopup(env2);
-  p2.click("Tensão");
+  p2.click("Reflexão");
   p2.panel().querySelector("textarea").value = "y";
   p2.pclick("Salvar");
   await tick();
@@ -704,7 +704,7 @@ test("menu de clique direito oferece três itens e desabilita com várias anota�
   const one = makeMenu(env, ["K1"]);
   assert.deepEqual(
     one.items.map((i) => i.label),
-    ["Leitura séria - Explicar este trecho", "Leitura séria - Síntese", "Leitura séria - Tensão"]
+    ["Leitura séria - Explicar este trecho", "Leitura séria - Síntese", "Leitura séria - Reflexão"]
   );
   assert.ok(one.items.every((i) => i.disabled === false));
   const many = makeMenu(env, ["K1", "K2"]);
@@ -729,7 +729,7 @@ test("o menu abre o mesmo painel lateral, sem caixas de diálogo", async () => {
   assert.equal(env.promptCalls.length, 0);
 });
 
-test("Síntese e Tensão numa anotação existente acrescentam ao comentário", async () => {
+test("Síntese e Reflexão numa anotação existente acrescentam ao comentário", async () => {
   const env = makeEnv();
   const item = fakeAnnotation(env, "K1", "Um trecho já destacado.", "→ conexão antiga");
   const m = makeMenu(env, ["K1"]);
@@ -742,7 +742,7 @@ test("Síntese e Tensão numa anotação existente acrescentam ao comentário", 
   assert.equal(item.annotationComment, "→ conexão antiga\nN: minha afirmação");
   assert.equal(item.saves, 1);
 
-  m.pclick("Tensão");
+  m.pclick("Reflexão");
   m.panel().querySelector("textarea").value = "discordo";
   m.pclick("Salvar (→)");
   await tick();
@@ -848,7 +848,7 @@ test("bootstrap.js carrega os scripts, registra os ganchos e desfaz tudo no shut
     params: { annotation: { text: "texto", sortIndex: "1", position: {}, pageLabel: "1" } },
     append: (n) => host.append(n),
   });
-  assert.deepEqual([...host.querySelectorAll("button")].map((b) => b.textContent), ["Explicar", "Síntese", "Tensão"]);
+  assert.deepEqual([...host.querySelectorAll("button")].map((b) => b.textContent), ["Explicar com IA", "Síntese", "Reflexão"]);
 
   // O gancho do menu desenha os itens.
   const items = [];
