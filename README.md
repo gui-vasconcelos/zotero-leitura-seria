@@ -19,7 +19,7 @@ The idea comes from two sources. From Mortimer Adler, the rule of understanding 
 
 ## What it does
 
-Select text in a PDF and the popup gets a small row with three buttons. They only launch a side panel that opens next to the PDF, so you can keep seeing what you are reading. The panel pushes the page to the left instead of covering it, and its width is configurable.
+Select text in a PDF and the popup gets a small row with three buttons. When a highlight or underline tool is active, Zotero creates the annotation straight away and shows no selection popup, so the plugin opens the side panel (with no question yet) as soon as such an annotation is created. This can be turned off in the plugin's settings. They only launch a side panel that opens next to the PDF, so you can keep seeing what you are reading. The panel pushes the page to the left instead of covering it, and its width is configurable.
 
 **Explicar com IA (Explain with AI)** asks the model for a short explanation of the passage. The answer is read-only and is not saved. The prompt tells the model to point to the term that carries the argument, not to summarize the text, not to evaluate the author, and to say which context is missing when there is some. If you want to keep it, Save puts the explanation in the annotation comment, starting with the marker `M:` (configurable) so its origin stays clear. After an explanation, the button "Com as minhas palavras" (In my own words) opens a comprehension question so you can try to say the passage your own way.
 
@@ -35,7 +35,7 @@ Only Explain with AI uses an AI model. Synthesis and Tension work offline and wi
 
 ## Installation
 
-1. Download `leitura-seria-0.2.2.xpi` (from the Releases page, or build it yourself, see below).
+1. Download `leitura-seria-0.2.3.xpi` (from the Releases page, or build it yourself, see below).
 2. In Zotero, open Tools, then Plugins.
 3. Click the gear, choose Install Plugin From File and select the `.xpi`.
 

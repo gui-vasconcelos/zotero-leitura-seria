@@ -825,18 +825,161 @@ test("anotação que não existe mais mostra um aviso em vez de quebrar", async 
 });
 
 
+// ------------------------------------------------------------------ destaques feitos com as ferramentas
+
+function makeTool(env, items) {
+  const dom = new JSDOM("<!doctype html><body></body>");
+  env.reader._iframeWindow = dom.window;
+  env.Zotero.Reader = { _readers: [env.reader] };
+  const baseGet = env.Zotero.Items.get;
+  env.Zotero.Items.get = (id) => items[id] || baseGet(id);
+  const ui = loadLib(env);
+  const doc = dom.window.document;
+  const panel = () => {
+    const o = doc.getElementById("leitura-seria-panel");
+    return o ? o.querySelector("iframe").contentDocument.body : null;
+  };
+  const pclick = (label) => {
+    const b = [...panel().querySelectorAll("button")].find((x) => x.textContent.startsWith(label));
+    assert.ok(b, "botão não encontrado " + label);
+    b.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true, cancelable: true }));
+  };
+  return { ui, doc, dom, panel, pclick };
+}
+
+function annotationItem(over) {
+  const item = Object.assign(
+    {
+      key: "TOOL0001",
+      parentID: 1,
+      annotationType: "highlight",
+      annotationText: "Texto destacado com a ferramenta.",
+      annotationComment: "",
+      saves: 0,
+      isAnnotation: () => true,
+      saveTx: async () => {
+        item.saves++;
+      },
+    },
+    over || {}
+  );
+  return item;
+}
+
+test("destaque feito com a ferramenta abre o painel, sem fazer pergunta nem chamar o modelo", async () => {
+  const env = makeEnv({ http: okResponse("x") });
+  const item = annotationItem();
+  const t = makeTool(env, { 50: item });
+  await t.ui.handleAdded([50]);
+  assert.ok(t.panel(), "o painel deveria abrir");
+  assert.ok(t.panel().textContent.includes("Texto destacado com a ferramenta."));
+  assert.equal(t.panel().querySelectorAll("textarea").length, 0, "sem pergunta até o leitor escolher");
+  assert.ok([...t.panel().querySelectorAll("button")].some((b) => b.textContent.startsWith("Explicar com IA")));
+  assert.equal(env.httpCalls.length, 0);
+  assert.equal(env.saved.length, 0);
+});
+
+test("sublinhado também abre o painel, e ink, imagem e outras anotações não", async () => {
+  const env = makeEnv();
+  const items = {
+    51: annotationItem({ key: "U1", annotationType: "underline" }),
+    52: annotationItem({ key: "I1", annotationType: "ink" }),
+    53: annotationItem({ key: "N1", annotationType: "note" }),
+    54: annotationItem({ key: "IM1", annotationType: "image" }),
+    55: { key: "X", isAnnotation: () => false, parentID: 1 },
+  };
+  const t = makeTool(env, items);
+  for (const id of [52, 53, 54, 55]) {
+    await t.ui.handleAdded([id]);
+    assert.equal(t.panel(), null, "não deveria abrir para " + id);
+  }
+  await t.ui.handleAdded([51]);
+  assert.ok(t.panel());
+});
+
+test("depois do destaque, escolher Síntese e salvar acrescenta ao comentário da anotação", async () => {
+  const env = makeEnv();
+  const item = annotationItem({ annotationComment: "meu comentário" });
+  env.annItems[item.key] = item;
+  const t = makeTool(env, { 50: item });
+  await t.ui.handleAdded([50]);
+  t.pclick("Síntese");
+  t.panel().querySelector("textarea").value = "afirmação curta";
+  t.pclick("Salvar (N:)");
+  await tick();
+  assert.equal(item.annotationComment, "meu comentário\nN: afirmação curta");
+  assert.equal(item.saves, 1);
+  assert.equal(env.saved.length, 0, "não cria outro destaque");
+});
+
+test("não abre com a opção desligada, em lote, durante sincronização ou sem leitor aberto", async () => {
+  const mk = (prefs) => {
+    const env = makeEnv({ prefs });
+    const t = makeTool(env, { 50: annotationItem(), 51: annotationItem({ key: "T2" }) });
+    return { env, t };
+  };
+  let { t } = mk({ "leitura-seria.autoOpen": false });
+  await t.ui.handleAdded([50]);
+  assert.equal(t.panel(), null);
+
+  ({ t } = mk({}));
+  await t.ui.handleAdded([50, 51]);
+  assert.equal(t.panel(), null, "lote");
+
+  let r = mk({});
+  r.env.Zotero.Sync = { Runner: { syncInProgress: true } };
+  await r.t.ui.handleAdded([50]);
+  assert.equal(r.t.panel(), null, "sincronizando");
+
+  r = mk({});
+  r.env.Zotero.Reader._readers = [];
+  await r.t.ui.handleAdded([50]);
+  assert.equal(r.t.panel(), null, "sem leitor");
+
+  r = mk({});
+  r.env.Zotero.Reader._readers = [{ itemID: 999 }];
+  await r.t.ui.handleAdded([50]);
+  assert.equal(r.t.panel(), null, "leitor de outro PDF");
+});
+
+test("destaque criado pelo próprio plugin não reabre o painel que o leitor fechou", async () => {
+  const env = makeEnv();
+  const t = makeTool(env, {});
+  const ann = {
+    text: "Trecho.",
+    color: "#ffd400",
+    pageLabel: "1",
+    sortIndex: "00000|000000|00000",
+    position: { pageIndex: 0, rects: [[1, 2, 3, 4]] },
+  };
+  const key = await t.ui.saveNewHighlight(env.reader, ann, "N: x");
+  // O Zotero avisaria o plugin dessa anotação, e ela não deve abrir nada.
+  env.Zotero.Items.get = ((old) => (id) => (id === 77 ? annotationItem({ key }) : old(id)))(env.Zotero.Items.get);
+  await t.ui.handleAdded([77]);
+  assert.equal(t.panel(), null);
+});
+
 // ------------------------------------------------------------------ bootstrap e arquivos
 
 test("bootstrap.js carrega os scripts, registra os ganchos e desfaz tudo no shutdown", async () => {
   const registered = [];
   const unregistered = [];
   const panes = [];
+  const observers = [];
+  const unobserved = [];
   const env = makeEnv();
   const Zotero = Object.assign({}, env.Zotero, {
     initializationPromise: Promise.resolve(),
     Reader: {
       registerEventListener: (type, fn, id) => registered.push({ type, fn, id }),
       unregisterEventListener: (type, fn) => unregistered.push({ type, fn }),
+    },
+    Notifier: {
+      registerObserver: (obs, types, name) => {
+        observers.push({ obs, types, name });
+        return "obs-1";
+      },
+      unregisterObserver: (id) => unobserved.push(id),
     },
     PreferencePanes: {
       register: async (o) => {
@@ -878,6 +1021,14 @@ test("bootstrap.js carrega os scripts, registra os ganchos e desfaz tudo no shut
   });
   assert.deepEqual([...host.querySelectorAll("button")].map((b) => b.textContent), ["Explicar com IA", "Síntese", "Reflexão"]);
 
+  // O observador de anotações novas está registrado para itens e entrega os ids ao plugin.
+  assert.equal(observers.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(observers[0].types)), ["item"]);
+  await observers[0].obs.notify("modify", "item", [1]); // outros eventos são ignorados
+  await observers[0].obs.notify("add", "collection", [1]);
+  await observers[0].obs.notify("add", "item", [12345]); // item desconhecido não pode lançar erro
+  assert.equal(env.errors.length, 0);
+
   // O gancho do menu desenha os itens.
   const items = [];
   registered[1].fn({ reader: env.reader, params: { ids: ["K1"] }, append: (i) => items.push(i) });
@@ -886,6 +1037,7 @@ test("bootstrap.js carrega os scripts, registra os ganchos e desfaz tudo no shut
   ctxTarget.shutdown();
   assert.deepEqual(unregistered.map((u) => u.type), ["renderTextSelectionPopup", "createAnnotationContextMenu"]);
   assert.ok(panes.some((p) => p.unregistered === "pane-1"));
+  assert.deepEqual(unobserved, ["obs-1"]);
 });
 
 test("manifest.json e prefs.js são coerentes com o código", () => {

@@ -4,6 +4,7 @@ pref("extensions.zotero.leitura-seria.apiKey", "");
 pref("extensions.zotero.leitura-seria.disableThinking", true);
 pref("extensions.zotero.leitura-seria.sendMetadata", true);
 pref("extensions.zotero.leitura-seria.panelWidth", 380);
+pref("extensions.zotero.leitura-seria.autoOpen", true);
 pref("extensions.zotero.leitura-seria.language", "português do Brasil");
 pref("extensions.zotero.leitura-seria.prefix.sintese", "N:");
 pref("extensions.zotero.leitura-seria.prefix.tensao", "→");

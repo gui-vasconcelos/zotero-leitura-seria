@@ -5,6 +5,7 @@ var paneID = null;
 var ui = null;
 var popupHandler = null;
 var menuHandler = null;
+var observerID = null;
 
 function log(msg) {
   Zotero.debug("[Leitura Séria] " + msg);
@@ -43,6 +44,27 @@ async function startup({ id, version, rootURI }) {
   Zotero.Reader.registerEventListener("renderTextSelectionPopup", popupHandler, id);
   Zotero.Reader.registerEventListener("createAnnotationContextMenu", menuHandler, id);
 
+  // Destaques e sublinhados feitos com as ferramentas do leitor não passam pelo popup da seleção.
+  // Aqui o plugin fica sabendo deles pelo notificador e abre o painel.
+  try {
+    observerID = Zotero.Notifier.registerObserver(
+      {
+        notify: async (event, type, ids) => {
+          if (event !== "add" || type !== "item") return;
+          try {
+            if (ui) await ui.handleAdded(ids);
+          } catch (e) {
+            Zotero.logError(e);
+          }
+        },
+      },
+      ["item"],
+      "leitura-seria"
+    );
+  } catch (e) {
+    log("Não consegui registrar o observador de anotações. " + e);
+  }
+
   try {
     paneID = await Zotero.PreferencePanes.register({
       pluginID: id,
@@ -69,11 +91,15 @@ function shutdown() {
     Zotero.logError(e);
   }
   try {
+    if (observerID) Zotero.Notifier.unregisterObserver(observerID);
+  } catch (e) {}
+  try {
     if (paneID && Zotero.PreferencePanes.unregister) Zotero.PreferencePanes.unregister(paneID);
   } catch (e) {}
   popupHandler = null;
   menuHandler = null;
   paneID = null;
+  observerID = null;
   ui = null;
 }
 
